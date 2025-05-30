@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vending Machine Finite State Automaton</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 15px;
+            color: #374151;
+        }
+
+        /* State Diagram */
+        .state-diagram {
+            position: relative;
+            height: 320px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fafafa;
+        }
+
+        .state {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .state.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+        }
+
+        .state-label {
+            position: absolute;
+            top: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: #374151;
+        }
+
+        .state-idle { background-color: #3b82f6; top: 20px; left: 20px; }
+        .state-money { background-color: #eab308; top: 20px; right: 20px; }
+        .state-dispense { background-color: #22c55e; bottom: 20px; right: 20px; }
+        .state-change { background-color: #a855f7; bottom: 20px; left: 20px; }
+
+        .state-inactive { background-color: #9ca3af; }
+
+        /* Display */
+        .display {
+            background: #000;
+            color: #22c55e;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 15px;
+        }
+
+        .display-line {
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .highlight { color: #fbbf24; font-weight: bold; }
+
+        /* Products */
+        .products {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .product {
+            padding: 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .product:hover:not(:disabled) {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+
+        .product:disabled {
+            background: #f3f4f6;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .product-id { font-weight: bold; }
+        .product-name { margin: 5px 0; }
+        .product-price { color: #059669; font-weight: bold; }
+
+        /* Controls */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn-coin {
+            background: #eab308;
+            color: white;
+        }
+
+        .btn-coin:hover:not(:disabled) {
+            background: #ca8a04;
+        }
+
+        .btn-dollar {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-dollar:hover:not(:disabled) {
+            background: #16a34a;
+        }
+
+        .btn-refund {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-refund:hover:not(:disabled) {
+            background: #dc2626;
+        }
+
+        .btn-reset {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #4b5563;
+        }
+
+        button:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+
+        /* History */
+        .history {
+            margin-top: 30px;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .state-tag {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+        }
+
+        .state-tag.to {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .arrow {
+            color: #6b7280;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #d1d5db;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #f3f4f6;
+            font-weight: bold;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vending Machine Finite State Automaton</h1>
+        
+        <div class="main-grid">
+            <!-- State Diagram -->
+            <div class="card">
+                <h2>State Diagram</h2>
+                <div class="state-diagram">
+                    <div class="state state-idle" id="state-idle">IDLE<div class="state-label">Waiting</div></div>
+                    <div class="state state-money state-inactive" id="state-money">MONEY<div class="state-label">Has Money</div></div>
+                    <div class="state state-dispense state-inactive" id="state-dispense">DISPENSE<div class="state-label">Dispensing</div></div>
+                    <div class="state state-change state-inactive" id="state-change">CHANGE<div class="state-label">Returning</div></div>
+                </div>
+            </div>
+
+            <!-- Vending Machine Interface -->
+            <div class="card">
+                <h2>Vending Machine</h2>
+                
+                <!-- Display -->
+                <div class="display">
+                    <div class="display-line">State: <span class="highlight" id="current-state">IDLE</span></div>
+                    <div class="display-line">Balance: <span class="highlight" id="balance">$0.00</span></div>
+                    <div class="display-line" id="message">Welcome! Insert coins to start.</div>
+                </div>
+
+                <!-- Products -->
+                <div class="products">
+                    <button class="product" data-product="0" disabled>
+                        <div class="product-id">A1</div>
+                        <div class="product-name">Soda</div>
+                        <div class="product-price">$1.50</div>
+                    </button>
+                    <button class="product" data-product="1" disabled>
+                        <div class="product-id">A2</div>
+                        <div class="product-name">Chips</div>
+                        <div class="product-price">$1.25</div>
+                    </button>
+                    <button class="product" data-product="2" disabled>
+                        <div class="product-id">A3</div>
+                        <div class="product-name">Candy</div>
+                        <div class="product-price">$1.00</div>
+                    </button>
+                    <button class="product" data-product="3" disabled>
+                        <div class="product-id">B1</div>
+                        <div class="product-name">Water</div>
+                        <div class="product-price">$1.75</div>
+                    </button>
+                </div>
+
+                <!-- Controls -->
+                <div class="controls">
+                    <button class="btn-coin" onclick="insertCoin(0.25)">🪙 $0.25</button>
+                    <button class="btn-coin" onclick="insertCoin(0.50)">🪙 $0.50</button>
+                    <button class="btn-dollar" onclick="insertCoin(1.00)">💵 $1.00</button>
+                </div>
+                
+                <div class="control-row">
+                    <button class="btn-refund" onclick="refund()" id="refund-btn" disabled>Refund</button>
+                    <button class="btn-reset" onclick="reset()">🔄 Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transition History -->
+        <div class="card">
+            <h2>State Transition History</h2>
+            <div id="history">
+                <p style="color: #6b7280; font-style: italic;">No transitions yet. Start by inserting money!</p>
+            </div>
+        </div>
+
+        <!-- State Table -->
+        <div class="card">
+            <h2>State Transition Table</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Current State</th>
+                        <th>Input/Event</th>
+                        <th>Next State</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>IDLE</td><td>Insert Money</td><td>MONEY_INSERTED</td><td>Update balance</td></tr>
+                    <tr><td>MONEY_INSERTED</td><td>Select Product (sufficient funds)</td><td>DISPENSING</td><td>Start dispensing</td></tr>
+                    <tr><td>MONEY_INSERTED</td><td>Refund</td><td>CHANGE</td><td>Return money</td></tr>
+                    <tr><td>DISPENSING</td><td>Dispensing complete (change needed)</td><td>CHANGE</td><td>Calculate change</td></tr>
+                    <tr><td>DISPENSING</td><td>Dispensing complete (exact change)</td><td>IDLE</td><td>Reset for next customer</td></tr>
+                    <tr><td>CHANGE</td><td>Change dispensed</td><td>IDLE</td><td>Reset for next customer</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let currentState = 'IDLE';
+        let balance = 0;
+        let transitionHistory = [];
+
+        const products = [
+            { id: 'A1', name: 'Soda', price: 1.50 },
+            { id: 'A2', name: 'Chips', price: 1.25 },
+            { id: 'A3', name: 'Candy', price: 1.00 },
+            { id: 'B1', name: 'Water', price: 1.75 }
+        ];
+
+        // DOM elements
+        const stateElements = {
+            'IDLE': document.getElementById('state-idle'),
+            'MONEY_INSERTED': document.getElementById('state-money'),
+            'DISPENSING': document.getElementById('state-dispense'),
+            'CHANGE': document.getElementById('state-change')
+        };
+
+        const currentStateEl = document.getElementById('current-state');
+        const balanceEl = document.getElementById('balance');
+        const messageEl = document.getElementById('message');
+        const historyEl = document.getElementById('history');
+        const refundBtn = document.getElementById('refund-btn');
+        const productButtons = document.querySelectorAll('.product');
+
+        // Initialize
+        updateDisplay();
+        setupProductButtons();
+
+        function updateDisplay() {
+            // Update state display
+            currentStateEl.textContent = currentState;
+            balanceEl.textContent = `$${balance.toFixed(2)}`;
+
+            // Update visual states
+            Object.keys(stateElements).forEach(state => {
+                const element = stateElements[state];
+                if (state === currentState) {
+                    element.classList.remove('state-inactive');
+                    element.classList.add('active');
+                } else {
+                    element.classList.add('state-inactive');
+                    element.classList.remove('active');
+                }
+            });
+
+            // Update product buttons
+            productButtons.forEach((btn, index) => {
+                btn.disabled = currentState !== 'MONEY_INSERTED';
+            });
+
+            // Update refund button
+            refundBtn.disabled = currentState !== 'MONEY_INSERTED' || balance === 0;
+
+            // Update coin buttons
+            const coinButtons = document.querySelectorAll('.btn-coin, .btn-dollar');
+            coinButtons.forEach(btn => {
+                btn.disabled = currentState === 'DISPENSING' || currentState === 'CHANGE';
+            });
+        }
+
+        function setupProductButtons() {
+            productButtons.forEach((btn, index) => {
+                btn.addEventListener('click', () => selectProduct(index));
+            });
+        }
+
+        function addTransition(from, to, action) {
+            transitionHistory.push({ from, to, action, timestamp: Date.now() });
+            if (transitionHistory.length > 5) {
+                transitionHistory.shift();
+            }
+            updateHistory();
+        }
+
+        function updateHistory() {
+            if (transitionHistory.length === 0) {
+                historyEl.innerHTML = '<p style="color: #6b7280; font-style: italic;">No transitions yet. Start by inserting money!</p>';
+                return;
+            }
+
+            historyEl.innerHTML = transitionHistory.map(transition => `
+                <div class="history-item">
+                    <span class="state-tag">${transition.from}</span>
+                    <span class="arrow">→</span>
+                    <span class="state-tag to">${transition.to}</span>
+                    <span>(${transition.action})</span>
+                </div>
+            `).join('');
+        }
+
+        function insertCoin(amount) {
+            if (currentState === 'IDLE' || currentState === 'MONEY_INSERTED') {
+                balance += amount;
+                if (currentState === 'IDLE') {
+                    currentState = 'MONEY_INSERTED';
+                    addTransition('IDLE', 'MONEY_INSERTED', `Insert $${amount}`);
+                    messageEl.textContent = `$${balance.toFixed(2)} inserted. Select a product.`;
+                } else {
+                    messageEl.textContent = `Total: $${balance.toFixed(2)}. Select a product.`;
+                }
+                updateDisplay();
+            }
+        }
+
+        function selectProduct(index) {
+            if (currentState === 'MONEY_INSERTED') {
+                const product = products[index];
+                if (balance >= product.price) {
+                    currentState = 'DISPENSING';
+                    addTransition('MONEY_INSERTED', 'DISPENSING', `Select ${product.name}`);
+                    messageEl.textContent = `Dispensing ${product.name}...`;
+                    updateDisplay();
+                    
+                    // Simulate dispensing delay
+                    setTimeout(() => {
+                        const change = balance - product.price;
+                        balance = 0;
+                        
+                        if (change > 0) {
+                            currentState = 'CHANGE';
+                            addTransition('DISPENSING', 'CHANGE', 'Need change');
+                            messageEl.textContent = `Here's your ${product.name}! Returning $${change.toFixed(2)} change.`;
+                            updateDisplay();
+                            
+                            // Simulate change dispensing
+                            setTimeout(() => {
+                                currentState = 'IDLE';
+                                addTransition('CHANGE', 'IDLE', 'Change returned');
+                                messageEl.textContent = 'Transaction complete. Thank you!';
+                                updateDisplay();
+                            }, 2000);
+                        } else {
+                            currentState = 'IDLE';
+                            addTransition('DISPENSING', 'IDLE', 'No change needed');
+                            messageEl.textContent = `Here's your ${product.name}! Thank you!`;
+                            updateDisplay();
+                        }
+                    }, 2000);
+                } else {
+                    messageEl.textContent = `Insufficient funds. Need $${(product.price - balance).toFixed(2)} more.`;
+                }
+            }
+        }
+
+        function refund() {
+            if (currentState === 'MONEY_INSERTED' && balance > 0) {
+                currentState = 'CHANGE';
+                addTransition('MONEY_INSERTED', 'CHANGE', 'Refund requested');
+                messageEl.textContent = `Returning $${balance.toFixed(2)}...`;
+                updateDisplay();
+                
+                setTimeout(() => {
+                    balance = 0;
+                    currentState = 'IDLE';
+                    addTransition('CHANGE', 'IDLE', 'Refund complete');
+                    messageEl.textContent = 'Refund complete. Thank you!';
+                    updateDisplay();
+                }, 1500);
+            }
+        }
+
+        function reset() {
+            currentState = 'IDLE';
+            balance = 0;
+            transitionHistory = [];
+            messageEl.textContent = 'Welcome! Insert coins to start.';
+            updateDisplay();
+            updateHistory();
+        }
+    </script>
+</body>
+</html>
